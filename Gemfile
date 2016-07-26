@@ -4,5 +4,5 @@ ruby '2.3.0'
 
 gem 'capybara'
 gem 'selenium-webdriver'
-#gem 'poltergeist'
+gem 'poltergeist'
 gem 'site_prism'
