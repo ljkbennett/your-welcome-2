@@ -1,5 +1,4 @@
 require 'capybara/dsl'
-require 'capybara/poltergeist'
 require 'site_prism'
 
 require './twitter/driver'

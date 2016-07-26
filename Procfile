@@ -1,1 +1,1 @@
-worker: ruby your_welcome_2.rb
+worker: xvfb-run ruby your_welcome_2.rb
