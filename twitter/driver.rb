@@ -8,8 +8,8 @@ class Twitter
     login_page = TwitterPages::LoginPage.new
     login_page.load
     login_page.login_button.click
-    login_page.login_form.username.send_keys 'username'
-    login_page.login_form.password.send_keys 'password'
+    login_page.login_form.username.send_keys ENV.fetch('TWITTER_USERNAME')
+    login_page.login_form.password.send_keys ENV.fetch('TWITTER_PASSWORD')
     login_page.login_form.submit.click
   end
 
