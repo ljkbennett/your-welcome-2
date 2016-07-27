@@ -4,6 +4,8 @@ require_relative 'pages/search_page'
 class Twitter
   include Capybara::DSL
 
+  attr_accessor :DB
+
   def initialize(db)
     self.DB = db
   end
