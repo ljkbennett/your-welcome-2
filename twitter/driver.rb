@@ -5,7 +5,7 @@ require_relative 'pages/tweet_page'
 class Twitter
   include Capybara::DSL
   
-  MINIMUM_FOLLOWERS = 1000
+  MINIMUM_FOLLOWERS = 10000
 
   attr_accessor :DB
 
