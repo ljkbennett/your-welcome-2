@@ -4,8 +4,8 @@ require_relative 'pages/search_page'
 class Twitter
   include Capybara::DSL
 
-  def initialize(DB)
-    self.DB = DB
+  def initialize(db)
+    self.DB = db
   end
 
   MINIMUM_FOLLOWERS = 1000
