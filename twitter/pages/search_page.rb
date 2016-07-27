@@ -8,7 +8,7 @@ module TwitterPages
       element :reply_button, '.ProfileTweet-actionButton.js-actionReply'
     end
 
-    element :follower_count, '.ProfileCardStats-statValue'
+    element :follower_count, '.ProfileCardStats-statLink'
 
     element :editor, '.tweet-box.rich-editor'
     element :submit_button, '.modal-tweet-form-container .tweet-btn'
