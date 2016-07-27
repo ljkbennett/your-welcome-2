@@ -15,12 +15,11 @@ DB = Sequel.connect(ENV.fetch('DATABASE_URL'))
 twitter = Twitter.new(DB)
 twitter.login
 
-last_reply = ''
-
 while true do
   begin
     twitter.search
-    last_reply = twitter.read_and_store_results(last_reply)
+    twitter.read_and_store_results(DB[:search_results].max(:tweet_id) || 0)
+    twitter.post_reply
     sleep 45
   rescue Exception => e
     puts e

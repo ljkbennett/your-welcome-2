@@ -1,16 +1,17 @@
 require_relative 'pages/login_page'
 require_relative 'pages/search_page'
+require_relative 'pages/tweet_page'
 
 class Twitter
   include Capybara::DSL
+  
+  MINIMUM_FOLLOWERS = 1000
 
   attr_accessor :DB
 
   def initialize(db)
     self.DB = db
   end
-
-  MINIMUM_FOLLOWERS = 1000
 
   def login
     login_page = TwitterPages::LoginPage.new
@@ -26,9 +27,24 @@ class Twitter
   end
 
   def followers(stream_item)
-    stream_item.user_profile_link.hover
-    search_page.wait_for_follower_count
-    search_page.follower_count['title'].gsub(/[^\d\.-]/,'').to_i
+    begin
+      search_page.new_tweet_btn.hover
+      search_page.wait_until_follower_count_invisible
+      stream_item.user_profile_link.hover
+      search_page.wait_for_follower_count
+
+      count = search_page.follower_count['title'].gsub(/[^\d\.-]/,'').to_i
+      
+      script = <<-JS
+        arguments[0].scrollIntoView(true);
+        window.scrollBy(0,-50)
+      JS
+      page.driver.browser.execute_script(script, stream_item.root_element.native)
+
+      count
+    rescue
+      0
+    end
   end
 
   def id(stream_item)
@@ -37,44 +53,40 @@ class Twitter
 
   def read_and_store_results(latest)
     stream_items = search_page.stream_items
-
     top_id = id(stream_items.first)
+    
+    search_results = DB[:search_results]
 
-    search_items = DB[:search_items]
-
-    stream_items.reject! do |stream_item|
-      id(stream_item) > latest || followers(stream_item) >= MINIMUM_FOLLOWERS
+    stream_items.each do |stream_item|
+      id = id(stream_item)
+      followers = followers(stream_item)
+      allowed = (id > latest) && (followers >= MINIMUM_FOLLOWERS)
+      if allowed
+        record = { tweet_id: id, followers: followers, user_name: stream_item.username.text } 
+        search_results.insert(record)
+      end
     end
-
-    stream_items.each do
-      record = {
-        tweet_id:  id(stream_item),
-        user_name: stream_item.username.text,
-        followers: followers(stream_item)
-      }
-      search_items.insert(record)
-
-      puts record
-    end
-
-    top_id
   end
 
-  # def post_reply(last)
-  #   stream_item = stream_items.max do |a,b|
-  #     followers(a) <=> followers(b) 
-  #   end
-    
-  #   if stream_item
-  #     username = "@#{stream_item.username.text}"
-  #     stream_item.reply_button.click
+  def post_reply
+    search_results = DB[:search_results]
+    tweet = search_results.where(reply_sent: false).order(Sequel.desc(:followers))
+                          .limit(1)
+                          .first
 
-  #     search_page.editor.set ".#{username}, I think you mean \"you're welcome\". You're welcome."
-  #     search_page.editor.click
-  #     search_page.submit_button.click
-  #   end
-  #   id
-  # end
+    return if tweet.nil?
+
+    tweet_page.load(user_name: tweet[:user_name], tweet_id: tweet[:tweet_id])
+    
+    username = "@#{tweet[:user_name]}"
+    tweet_page.reply_button.click
+
+    tweet_page.editor.set ".#{username}, I think you mean \"you're welcome\". You're welcome."
+    tweet_page.editor.click
+    tweet_page.submit_button.click
+
+    search_results.where(id: tweet[:id]).update(reply_sent: true)
+  end
 
   def report_error
   end
@@ -83,5 +95,9 @@ class Twitter
 
   def search_page
     @search_page ||= TwitterPages::SearchPage.new
+  end
+
+  def tweet_page
+    @tweet_page  ||= TwitterPages::TweetPage.new
   end
 end
