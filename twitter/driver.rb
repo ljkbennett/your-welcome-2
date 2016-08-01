@@ -70,11 +70,13 @@ class Twitter
 
   def post_reply
     search_results = DB[:search_results]
-    tweet = search_results.where(reply_sent: false).order(Sequel.desc(:followers))
+    tweet = search_results.where(reply_sent: false)
+                          .order(Sequel.desc(:followers))
                           .limit(1)
                           .first
 
     return if tweet.nil?
+    search_results.where(id: tweet[:id]).update(reply_sent: true)
 
     tweet_page.load(user_name: tweet[:user_name], tweet_id: tweet[:tweet_id])
     
@@ -85,7 +87,6 @@ class Twitter
     tweet_page.editor.click
     tweet_page.submit_button.click
 
-    search_results.where(id: tweet[:id]).update(reply_sent: true)
   end
 
   def report_error
